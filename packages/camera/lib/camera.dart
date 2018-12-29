@@ -178,13 +178,21 @@ class CameraValue {
 class CameraController extends ValueNotifier<CameraValue> {
   final CameraDescription description;
   final ResolutionPreset resolutionPreset;
+  final double preferredAspectRatio;
+  final int videoEncodingBitRate;
+  final int videoFrameRate;
+  final int audioSamplingRate;
 
   int _textureId;
   bool _isDisposed = false;
   StreamSubscription<dynamic> _eventSubscription;
   Completer<Null> _creatingCompleter;
 
-  CameraController(this.description, this.resolutionPreset)
+  CameraController(this.description, this.resolutionPreset,
+      {this.preferredAspectRatio: 0.0,
+      this.videoEncodingBitRate: 1024 * 1000,
+      this.videoFrameRate: 27,
+      this.audioSamplingRate: 16000})
       : super(const CameraValue.uninitialized());
 
   /// Initializes the camera on the device.
@@ -201,6 +209,10 @@ class CameraController extends ValueNotifier<CameraValue> {
         <String, dynamic>{
           'cameraName': description.name,
           'resolutionPreset': serializeResolutionPreset(resolutionPreset),
+          'preferredAspectRatio': preferredAspectRatio,
+          'videoEncodingBitRate': videoEncodingBitRate,
+          'videoFrameRate': videoFrameRate,
+          'audioSamplingRate': audioSamplingRate
         },
       );
       _textureId = reply['textureId'];
@@ -333,6 +345,14 @@ class CameraController extends ValueNotifier<CameraValue> {
     } on PlatformException catch (e) {
       throw CameraException(e.code, e.message);
     }
+  }
+
+  /// Focus camera from the position of a tap
+  Future<Null> focusCamera(double x, double y, double width, double height) async {
+    await _channel.invokeMethod(
+      'focusCamera',
+      <String, dynamic>{'x': x, 'y': y, 'width': width, 'height': height}
+    );
   }
 
   /// Releases the resources of this camera.
