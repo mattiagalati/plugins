@@ -193,6 +193,7 @@ public class CameraPlugin implements MethodCallHandler {
         {
           String cameraName = call.argument("cameraName");
           String resolutionPreset = call.argument("resolutionPreset");
+          boolean withVideo = call.argument("withVideo");
           double preferredAspectRatio = call.argument("preferredAspectRatio");
           int videoEncodingBitRate = call.argument("videoEncodingBitRate");
           int videoFrameRate = call.argument("videoFrameRate");
@@ -204,6 +205,7 @@ public class CameraPlugin implements MethodCallHandler {
               new Camera(
                   cameraName,
                   resolutionPreset,
+                  withVideo,
                   preferredAspectRatio,
                   videoEncodingBitRate,
                   videoFrameRate,
@@ -304,6 +306,7 @@ public class CameraPlugin implements MethodCallHandler {
     Camera(
         final String cameraName,
         final String resolutionPreset,
+        final boolean withVideo,
         final double preferredAspectRatio,
         final int videoEncodingBitRate,
         final int videoFrameRate,
@@ -345,9 +348,9 @@ public class CameraPlugin implements MethodCallHandler {
         CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraName);
         StreamConfigurationMap streamConfigurationMap =
             characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
-        //noinspection ConstantConditions
+        // noinspection ConstantConditions
         sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION);
-        //noinspection ConstantConditions
+        // noinspection ConstantConditions
         isFrontFacing =
             characteristics.get(CameraCharacteristics.LENS_FACING)
                 == CameraMetadata.LENS_FACING_FRONT;
@@ -367,7 +370,7 @@ public class CameraPlugin implements MethodCallHandler {
                       "cameraPermission", "MediaRecorderCamera permission not granted", null);
                   return;
                 }
-                if (!hasAudioPermission()) {
+                if (withVideo && !hasAudioPermission()) {
                   result.error(
                       "cameraPermission", "MediaRecorderAudio permission not granted", null);
                   return;
@@ -376,16 +379,17 @@ public class CameraPlugin implements MethodCallHandler {
               }
             };
         requestingPermission = false;
-        if (hasCameraPermission() && hasAudioPermission()) {
+        if (hasCameraPermission() && (withVideo ? hasAudioPermission() : true)) {
           cameraPermissionContinuation.run();
         } else {
           if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestingPermission = true;
-            registrar
-                .activity()
-                .requestPermissions(
-                    new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO},
-                    CAMERA_REQUEST_ID);
+            String[] permissions =
+                withVideo
+                    ? new String[] {Manifest.permission.CAMERA, Manifest.permission.RECORD_AUDIO}
+                    : new String[] {Manifest.permission.CAMERA};
+
+            registrar.activity().requestPermissions(permissions, CAMERA_REQUEST_ID);
           }
         }
       } catch (CameraAccessException e) {

@@ -178,6 +178,7 @@ class CameraValue {
 class CameraController extends ValueNotifier<CameraValue> {
   final CameraDescription description;
   final ResolutionPreset resolutionPreset;
+  final bool withVideo;
   final double preferredAspectRatio;
   final int videoEncodingBitRate;
   final int videoFrameRate;
@@ -189,7 +190,8 @@ class CameraController extends ValueNotifier<CameraValue> {
   Completer<Null> _creatingCompleter;
 
   CameraController(this.description, this.resolutionPreset,
-      {this.preferredAspectRatio: 0.0,
+      {this.withVideo: false,
+      this.preferredAspectRatio: 0.0,
       this.videoEncodingBitRate: 1024 * 1000,
       this.videoFrameRate: 27,
       this.audioSamplingRate: 16000})
@@ -209,6 +211,7 @@ class CameraController extends ValueNotifier<CameraValue> {
         <String, dynamic>{
           'cameraName': description.name,
           'resolutionPreset': serializeResolutionPreset(resolutionPreset),
+          'withVideo': withVideo,
           'preferredAspectRatio': preferredAspectRatio,
           'videoEncodingBitRate': videoEncodingBitRate,
           'videoFrameRate': videoFrameRate,
@@ -309,6 +312,12 @@ class CameraController extends ValueNotifier<CameraValue> {
       throw CameraException(
         'A video recording is already started.',
         'startVideoRecording was called when a recording is already started.',
+      );
+    }
+    if (!withVideo) {
+      throw CameraException(
+        'CameraController not configured with video support.',
+        'Pass "withVideo: true" on construction.',
       );
     }
     try {

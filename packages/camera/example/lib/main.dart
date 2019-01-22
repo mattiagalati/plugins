@@ -203,7 +203,11 @@ class _CameraExampleHomeState extends State<CameraExampleHome> {
     if (controller != null) {
       await controller.dispose();
     }
-    controller = CameraController(cameraDescription, ResolutionPreset.high);
+    controller = CameraController(
+      cameraDescription,
+      ResolutionPreset.high,
+      withVideo: true,
+    );
 
     // If the controller is updated then update the UI.
     controller.addListener(() {
@@ -356,7 +360,7 @@ class CameraApp extends StatelessWidget {
 
 List<CameraDescription> cameras;
 
-Future<Null> main() async {
+Future<void> main() async {
   // Fetch the available cameras before initializing the app.
   try {
     cameras = await availableCameras();
