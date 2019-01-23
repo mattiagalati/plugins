@@ -339,12 +339,6 @@ public class CameraPlugin implements MethodCallHandler {
             throw new IllegalArgumentException("Unknown preset: " + resolutionPreset);
         }
 
-        int displayRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-        int displayOrientation = ORIENTATIONS.get(displayRotation);
-        if (displayOrientation == 90 || displayOrientation == 270) {
-          minPreviewSize = new Size(minPreviewSize.getHeight(), minPreviewSize.getWidth());
-        }
-
         CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraName);
         StreamConfigurationMap streamConfigurationMap =
             characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
@@ -431,11 +425,7 @@ public class CameraPlugin implements MethodCallHandler {
     private void computeBestPreviewAndRecordingSize(
         StreamConfigurationMap streamConfigurationMap, Size minPreviewSize, Size captureSize) {
       Size[] sizes = streamConfigurationMap.getOutputSizes(SurfaceTexture.class);
-      float captureSizeRatio =
-          (float)
-              (this.preferredAspectRatio == 0.0
-                  ? captureSize.getWidth() / captureSize.getHeight()
-                  : this.preferredAspectRatio);
+      float captureSizeRatio = (float) captureSize.getWidth() / captureSize.getHeight();
       List<Size> goodEnough = new ArrayList<>();
       for (Size s : sizes) {
         if ((float) s.getWidth() / s.getHeight() == captureSizeRatio
@@ -453,11 +443,10 @@ public class CameraPlugin implements MethodCallHandler {
       } else {
         previewSize = goodEnough.get(0);
 
-        // Video capture size should not be greater than 1080 because MediaRecorder cannot handle
-        // higher resolutions.
+        // Video capture size should not be greater than 1080 because MediaRecorder cannot handle higher resolutions.
         videoSize = goodEnough.get(0);
         for (int i = goodEnough.size() - 1; i >= 0; i--) {
-          if (Math.min(goodEnough.get(i).getHeight(), goodEnough.get(i).getWidth()) <= 1080) {
+          if (goodEnough.get(i).getHeight() <= 1080) {
             videoSize = goodEnough.get(i);
             break;
           }
@@ -483,9 +472,9 @@ public class CameraPlugin implements MethodCallHandler {
       mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
       mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
       mediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-      mediaRecorder.setVideoEncodingBitRate(this.videoEncodingBitRate);
-      mediaRecorder.setAudioSamplingRate(this.audioSamplingRate);
-      mediaRecorder.setVideoFrameRate(this.videoFrameRate);
+      mediaRecorder.setVideoEncodingBitRate(1024 * 1000);
+      mediaRecorder.setAudioSamplingRate(16000);
+      mediaRecorder.setVideoFrameRate(27);
       mediaRecorder.setVideoSize(videoSize.getWidth(), videoSize.getHeight());
       mediaRecorder.setOutputFile(outputFilePath);
 
