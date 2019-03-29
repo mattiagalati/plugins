@@ -86,6 +86,7 @@ public class CameraPlugin implements MethodCallHandler {
   private Runnable cameraPermissionContinuation;
   private boolean requestingPermission;
   private String videoFilePath;
+  List<Size> previewSizeFails = new ArrayList<Size>();
 
   private CameraPlugin(Registrar registrar, FlutterView view, Activity activity) {
     this.registrar = registrar;
@@ -302,6 +303,7 @@ public class CameraPlugin implements MethodCallHandler {
     private Size videoSize;
     private MediaRecorder mediaRecorder;
     private boolean recordingVideo;
+    private Size minPreviewSize;
 
     Camera(
         final String cameraName,
@@ -324,7 +326,6 @@ public class CameraPlugin implements MethodCallHandler {
       registerEventChannel();
 
       try {
-        Size minPreviewSize;
         switch (resolutionPreset) {
           case "high":
             minPreviewSize = new Size(1024, 768);
@@ -456,10 +457,19 @@ public class CameraPlugin implements MethodCallHandler {
 
     private void computeBestCaptureSize(StreamConfigurationMap streamConfigurationMap) {
       // For still image captures, we use the largest available size.
-      captureSize =
-          Collections.max(
-              Arrays.asList(streamConfigurationMap.getOutputSizes(ImageFormat.JPEG)),
-              new CompareSizesByArea());
+      Size[] sizes = streamConfigurationMap.getOutputSizes(ImageFormat.JPEG);
+
+      List<Size> notFailSizes = new ArrayList<>();
+      for (Size s : sizes) {
+        if (!previewSizeFails.contains(s)) {
+          notFailSizes.add(s);
+        }
+      }
+
+      if(notFailSizes.size() < 1) {
+        throw new IllegalArgumentException("No suitable previewSize has found to be configurable on Camera");
+      }
+      captureSize = Collections.max(notFailSizes, new CompareSizesByArea());
     }
 
     private void prepareMediaRecorder(String outputFilePath) throws IOException {
@@ -894,10 +904,32 @@ public class CameraPlugin implements MethodCallHandler {
 
             @Override
             public void onConfigureFailed(@NonNull CameraCaptureSession cameraCaptureSession) {
-              sendErrorEvent("Failed to configure the camera for preview.");
+              sendErrorEvent(String.format("Failed to configure the camera for preview at size %dx%d.", previewSize.getWidth(), previewSize.getHeight()));
+
+              previewSizeFails.add(previewSize);
+              resetPreview();
             }
           },
           null);
+    }
+
+    private void resetPreview(){
+      try{
+        CameraCharacteristics characteristics = cameraManager.getCameraCharacteristics(cameraName);
+        StreamConfigurationMap streamConfigurationMap =
+                characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+        computeBestCaptureSize(streamConfigurationMap);
+        computeBestPreviewAndRecordingSize(streamConfigurationMap, minPreviewSize, captureSize);
+        captureSize = null;
+                startPreview();
+      } catch (CameraAccessException e) {
+        //result.error("CameraAccess", e.getMessage(), null);
+        e.printStackTrace();
+
+      } catch (IllegalArgumentException e) {
+          e.printStackTrace();
+        //result.error("IllegalArgumentException", e.getMessage(), null);
+      }
     }
 
     private void sendErrorEvent(String errorDescription) {
