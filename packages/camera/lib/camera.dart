@@ -203,11 +203,13 @@ class CameraValue {
 ///
 /// To show the camera preview on the screen use a [CameraPreview] widget.
 class CameraController extends ValueNotifier<CameraValue> {
-  CameraController(this.description, this.resolutionPreset)
+  CameraController(this.description, this.resolutionPreset,
+      {this.withVideo = false})
       : super(const CameraValue.uninitialized());
 
   final CameraDescription description;
   final ResolutionPreset resolutionPreset;
+  final bool withVideo;
 
   int _textureId;
   bool _isDisposed = false;
@@ -230,6 +232,7 @@ class CameraController extends ValueNotifier<CameraValue> {
         <String, dynamic>{
           'cameraName': description.name,
           'resolutionPreset': serializeResolutionPreset(resolutionPreset),
+          'withVideo': withVideo
         },
       );
       _textureId = reply['textureId'];
@@ -433,7 +436,12 @@ class CameraController extends ValueNotifier<CameraValue> {
         'startVideoRecording was called while a camera was streaming images.',
       );
     }
-
+    if (!withVideo) {
+      throw CameraException(
+        'CameraController not configured with video support.',
+        'Pass "withVideo: true" on construction.',
+      );
+    }
     try {
       await _channel.invokeMethod<void>(
         'startVideoRecording',
@@ -468,6 +476,13 @@ class CameraController extends ValueNotifier<CameraValue> {
     } on PlatformException catch (e) {
       throw CameraException(e.code, e.message);
     }
+  }
+
+  /// Focus camera from the position of a tap
+  Future<Null> focusCamera(
+      double x, double y, double width, double height) async {
+    await _channel.invokeMethod('focusCamera',
+        <String, dynamic>{'x': x, 'y': y, 'width': width, 'height': height});
   }
 
   /// Releases the resources of this camera.
