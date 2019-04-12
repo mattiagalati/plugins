@@ -29,12 +29,12 @@ class Item {
     _controller.add(this);
   }
 
-  static final Map<String, Route<Null>> routes = <String, Route<Null>>{};
-  Route<Null> get route {
+  static final Map<String, Route<void>> routes = <String, Route<void>>{};
+  Route<void> get route {
     final String routeName = '/detail/$itemId';
     return routes.putIfAbsent(
       routeName,
-      () => MaterialPageRoute<Null>(
+      () => MaterialPageRoute<void>(
             settings: RouteSettings(name: routeName),
             builder: (BuildContext context) => DetailPage(itemId),
           ),
@@ -175,8 +175,10 @@ class _PushMessagingExampleState extends State<PushMessagingExample> {
         // For testing -- simulate a message being received
         floatingActionButton: FloatingActionButton(
           onPressed: () => _showItemDialog(<String, dynamic>{
-                "id": "2",
-                "status": "out of stock",
+                "data": <String, String>{
+                  "id": "2",
+                  "status": "out of stock",
+                },
               }),
           tooltip: 'Simulate Message',
           child: const Icon(Icons.message),

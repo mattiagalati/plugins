@@ -14,18 +14,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 class GoogleMapBuilder implements GoogleMapOptionsSink {
   private final GoogleMapOptions options = new GoogleMapOptions();
   private boolean trackCameraPosition = false;
+  private boolean myLocationEnabled = false;
+  private Object initialMarkers;
+  private Object initialPolylines;
 
   GoogleMapController build(
       int id, Context context, AtomicInteger state, PluginRegistry.Registrar registrar) {
     final GoogleMapController controller =
         new GoogleMapController(id, context, state, registrar, options);
     controller.init();
+    controller.setMyLocationEnabled(myLocationEnabled);
     controller.setTrackCameraPosition(trackCameraPosition);
+    controller.setInitialMarkers(initialMarkers);
+    controller.setInitialPolylines(initialPolylines);
     return controller;
   }
 
-  @Override
-  public void setCameraPosition(CameraPosition position) {
+  void setInitialCameraPosition(CameraPosition position) {
     options.camera(position);
   }
 
@@ -77,5 +82,20 @@ class GoogleMapBuilder implements GoogleMapOptionsSink {
   @Override
   public void setZoomGesturesEnabled(boolean zoomGesturesEnabled) {
     options.zoomGesturesEnabled(zoomGesturesEnabled);
+  }
+
+  @Override
+  public void setMyLocationEnabled(boolean myLocationEnabled) {
+    this.myLocationEnabled = myLocationEnabled;
+  }
+
+  @Override
+  public void setInitialMarkers(Object initialMarkers) {
+    this.initialMarkers = initialMarkers;
+  }
+
+  @Override
+  public void setInitialPolylines(Object initialPolylines) {
+    this.initialPolylines = initialPolylines;
   }
 }
