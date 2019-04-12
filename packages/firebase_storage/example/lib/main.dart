@@ -55,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
   List<StorageUploadTask> _tasks = <StorageUploadTask>[];
 
-  Future<Null> _uploadFile() async {
+  Future<void> _uploadFile() async {
     final String uuid = Uuid().v1();
     final Directory systemTempDir = Directory.systemTemp;
     final File file = await File('${systemTempDir.path}/foo$uuid.txt').create();
@@ -76,7 +76,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<Null> _downloadFile(StorageReference ref) async {
+  Future<void> _downloadFile(StorageReference ref) async {
     final String url = await ref.getDownloadURL();
     final String uuid = Uuid().v1();
     final http.Response downloadData = await http.get(url);
@@ -100,8 +100,8 @@ class _MyHomePageState extends State<MyHomePage> {
     _scaffoldKey.currentState.showSnackBar(SnackBar(
       content: Text(
         'Success!\n Downloaded $name \n from url: $url @ bucket: $bucket\n '
-            'at path: $path \n\nFile contents: "$fileContents" \n'
-            'Wrote "$tempFileContents" to tmp.txt',
+        'at path: $path \n\nFile contents: "$fileContents" \n'
+        'Wrote "$tempFileContents" to tmp.txt',
         style: const TextStyle(color: Color.fromARGB(255, 0, 155, 0)),
       ),
     ));
